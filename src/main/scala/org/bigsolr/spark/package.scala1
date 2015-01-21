@@ -1,0 +1,34 @@
+package org.bigsolr.spark
+
+import org.apache.spark.sql.{SQLContext, SchemaRDD}
+
+package object solr {
+
+  implicit class SolrContext(sqlContext: SQLContext) {
+    println("solr -> SolrContext --------------------------------------------")
+
+    //def readFromIndex(filePath: String) = {
+    def query(filePath: String) = {
+      println("solr -> SolrContext -> query --------------------------------------------: " + filePath)
+      sqlContext.baseRelationToSchemaRDD(SolrRelation(filePath)(sqlContext))
+
+    }
+    
+    def writeToIndex(filePath: String) = {
+      //
+      println("solr -> SolrContext -> writeToIndex --------------------------------------------: " + filePath)
+
+    }
+
+
+  }
+
+
+  implicit class SolrSchemaRDD(schemaRDD: SchemaRDD) {
+
+    def saveInIndex(path: String): Unit = {
+      println("solr -> SolrContext -> writeToIndex --------------------------------------------: " + path)
+      
+    }
+  }
+}
