@@ -20,13 +20,21 @@ import java.util.Map;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
+import java.io.ObjectInputStream;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.DataOutputOutputStream;
 import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.util.JavaBinCodec;
+import org.apache.solr.common.util.FastOutputStream;
+import org.apache.solr.hadoop.UnbufferedDataInputInputStream;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import org.apache.log4j.Logger;
 
-public class SolrRecord implements Writable {
+public class SolrRecord implements Writable, Serializable {
+
   private SolrDocument sd;
 
   private static Logger log = Logger.getLogger(SolrRecord.class);
@@ -83,14 +91,43 @@ public class SolrRecord implements Writable {
   @Override
   public void write(DataOutput out) throws IOException {
     log.debug("SolrRecord -> write");
-    // To-do. No need to Spark
     
+    JavaBinCodec codec = new JavaBinCodec();
+    FastOutputStream os = FastOutputStream.wrap(DataOutputOutputStream.constructOutputStream(out));
+    codec.init(os);
+    try {
+      codec.writeVal(sd);
+    } finally {
+      os.flushBuffer();
+    }
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     log.debug("SolrRecord -> readFields");
-    // To-do. No need to Spark
+    
+    JavaBinCodec codec = new JavaBinCodec();
+    UnbufferedDataInputInputStream is = new UnbufferedDataInputInputStream(in);
+    sd = (SolrDocument)codec.readVal(is);
+  }
+
+  // Returns JSON string
+  @Override
+  public String toString() {
+    log.debug("SolrRecord -> toString");
+
+    StringBuffer jsonStr = new StringBuffer();
+    jsonStr.append("{");
+    for(String fieldName : sd.getFieldNames()) {
+      String escapedFieldName = StringEscapeUtils.escapeJava((String)fieldName);
+      String escapedFieldValue = StringEscapeUtils.escapeJava((String)sd.getFieldValue(fieldName));
+      jsonStr.append("\"" + escapedFieldName + "\":\"" + escapedFieldValue + "\",");
+    }
+
+    jsonStr = jsonStr.deleteCharAt(jsonStr.length() - 1); // remove the last ',' character
+    jsonStr.append("}");
+
+    return jsonStr.toString();
   }
 
 }

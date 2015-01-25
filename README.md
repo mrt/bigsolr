@@ -21,9 +21,7 @@ $ mvn clean compile package
 ```
 
 
-## How to Access Solr from Spark
-
-### Prerequisites
+## Prerequisites
 <p>Before running the Spark program, Solr has to be up and running either in StandAlone or SolrCloud mode.</p>
 ```
 In StandAlone/HttpServer mode:
@@ -36,8 +34,8 @@ $ bin/solr -e cloud
 For the following example, create collection/core (index table) named "collection1" once the Solr server is up and running. 
 
 
-### Using Spark Shell
-<p>Start Spark Shell</p>
+## Using Spark Shell
+
 <p><i>Note: please ensure your Spark distribution's Hadoop version! For Hadoop 2.3/2.4 or higher distributions, follow the instructions for New Hadoop API. If your Spark is Hadoop 1.x, please follow the instructions for old Hadoop API below.</i></p>
 ```
 $ spark-shell --jars target/bigsolr-0.1.jar
@@ -129,7 +127,8 @@ scala> conf.set("solr.server.fields", fields)
 
 // Example with MapWritable
 
-scala> val m1 = Map("id" -> "1", "description" -> "apple orange New York", "author" -> scala> val m2 = Map("id" -> "2", "description" -> "apple peach San Diego", "author" -> "Kevin")
+scala> val m1 = Map("id" -> "1", "description" -> "apple orange New York", "author" -> "John")
+scala> val m2 = Map("id" -> "2", "description" -> "apple peach San Diego", "author" -> "Kevin")
 scala> val m3 = Map("id" -> "3", "description" -> "Apple tomato San Francisco", "author" -> "Nick")
 scala> val l1 = List[Map[String,String]](m1,m2,m3)
 scala> val rdds1 = sc.parallelize(l1)
@@ -326,10 +325,63 @@ scala> rdds1a.saveAsHadoopFile(
     )
 ```
 
+## Using PySpark Shell
+<p><i>Note: please ensure your Spark distribution's Hadoop version! For Hadoop 2.3/2.4 or higher distributions, follow the instructions for New Hadoop API. If your Spark is Hadoop 1.x, please follow the instructions for old Hadoop API below.</i></p>
+```
+$ pyspark --jars target/bigsolr-0.1.jar
+```
+
+### Reading from Solr with PySpark
+```
+For SolrCloud mode
+  >>> conf = {"solr.server.url":"localhost:9983", "solr.server.mode":"cloud", "solr.server.collection":"collection1", "solr.query":"id:*", "solr.server.fields":"id,description"}
+
+For StandAlone/HttpServer mode
+  >>> conf = {"solr.server.url":"http://localhost:8983/solr", "solr.server.mode":"standalone", "solr.server.collection":"collection1", "solr.query":"id:*", "solr.server.fields":"id,description"}
+  
+----------------------------------------------
+
+>>> rdds = sc.hadoopRDD("org.bigsolr.hadoop.SolrInputFormat", "org.apache.hadoop.io.NullWritable", "org.bigsolr.hadoop.SolrRecord", conf=conf)
+
+>>> rdd.count()
+
+>>> import json
+>>> results = rdds.collect()
+>>> for r in results:
+...   print json.loads(r[1])["id"]
+...   print json.loads(r[1])["description"]
+
+
+```
+
+### Indexing (Saving) RDDs in Solr with PySpark
+```
+For SolrCloud mode
+  >>> conf = {"solr.server.url":"localhost:9983", "solr.server.mode":"cloud", "solr.server.collection":"collection1", "solr.server.fields":"id,description"}
+
+For StandAlone/HttpServer mode
+  >>> conf = {"solr.server.url":"http://localhost:8983/solr", "solr.server.mode":"standalone", "solr.server.collection":"collection1", "solr.server.fields":"id,description"}
+  
+----------------------------------------------
+
+>>> m1 = (None, {"id": "1", "description": "apple orange New York", "author": "John"})
+>>> m2 = (None, {"id": "2", "description": "apple peach San Diego", "author": "Kevin"})
+>>> data = [m1,m2]
+>>> rdds = sc.parallelize(data)
+
+>>> rdds.saveAsHadoopFile("-", 
+		"org.bigsolr.hadoop.SolrOutputFormat", 
+		"org.apache.hadoop.io.NullWritable", 
+		"org.apache.hadoop.io.MapWritable", 
+		conf=conf)
+
+```
+
 
 
 ## License
-This software is available under the [Apache License, Version 2.0](LICENSE.txt).    
+This software is available under the [Apache License, Version 2.0](LICENSE.txt).
+
 
 ## Reporting Bugs
 Please use GitHub to report feature requests or bugs.  
