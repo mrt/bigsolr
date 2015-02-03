@@ -325,6 +325,41 @@ scala> rdds1a.saveAsHadoopFile(
     )
 ```
 
+## SparkSQL
+
+### Scala API
+```
+$ spark-shell --jars target/bigsolr-0.1.jar
+```
+
+```
+scala> import org.apache.spark.sql.SQLContext
+
+scala> val sqlContext = new SQLContext(sc)
+
+scala> import org.bigsolr.spark.solr._
+
+scala> val rdds = sqlContext.query("id:*", "http://localhost:8983/solr", "standalone", "collection1", "id,description")
+
+scala> rdds.count
+
+scala> rdds.first
+```
+
+### SQL API
+```
+$ spark-sql --jars target/bigsolr-0.1.jar
+```
+
+```
+spark-sql> CREATE TEMPORARY TABLE solr                                                                                                                
+         > USING org.bigsolr.spark                                                                                                                    
+         > OPTIONS (query "id:*", serverUrl "http://localhost:8983/solr", serverMode "standalone", collection "collection1", fields "id,description");
+
+spark-sql> select description from solr;
+
+```
+
 ## Using PySpark Shell
 <p><i>Note: please ensure your Spark distribution's Hadoop version! For Hadoop 2.3/2.4 or higher distributions, follow the instructions for New Hadoop API. If your Spark is Hadoop 1.x, please follow the instructions for old Hadoop API below.</i></p>
 ```
