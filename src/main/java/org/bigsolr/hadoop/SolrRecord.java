@@ -120,7 +120,7 @@ public class SolrRecord implements Writable, Serializable {
     jsonStr.append("{");
     for(String fieldName : sd.getFieldNames()) {
       String escapedFieldName = StringEscapeUtils.escapeJava((String)fieldName);
-      String escapedFieldValue = StringEscapeUtils.escapeJava((String)sd.getFieldValue(fieldName));
+      String escapedFieldValue = StringEscapeUtils.escapeJava((String)sd.getFieldValue(fieldName).toString());
       jsonStr.append("\"" + escapedFieldName + "\":\"" + escapedFieldValue + "\",");
     }
 
